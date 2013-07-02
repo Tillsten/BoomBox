@@ -30,7 +30,8 @@ class ImageLabel(QtGui.QWidget):
         lay = QtGui.QVBoxLayout()
 
         self.setLayout(lay)
-        self.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        self.setSizePolicy(QtGui.QSizePolicy.Fixed,
+                           QtGui.QSizePolicy.Fixed)
 
         self.pic = QtGui.QLabel()
         self.pixmap = QtGui.QPixmap(image_path)
@@ -49,32 +50,32 @@ class ImageLabel(QtGui.QWidget):
 class Tab_view(QtGui.QWidget):
     def __init__(self, parent=None):
         super(Tab_view, self).__init__(parent=parent)
+
+        self._setup_table()
+        self._setup_layout()
+
+        self.table.selectionModel().selectionChanged.connect(
+            self.selection_changed)
+
+    def _setup_layout(self):
+        "Setup the widget layout"
         lay = QtGui.QVBoxLayout()
         self.setLayout(lay)
+
         title_font = QtGui.QFont()
         title_font.setPixelSize(30)
         self.title = QtGui.QLabel(None)
         self.title.setFont(title_font)
-        lay.addWidget(self.title)
 
-        self.table = QtGui.QTableWidget(5, 2)
-        self.table.setHorizontalHeaderLabels(['Name', 'Preis'])
-        self.table.setColumnWidth(1, 50)
-        self.table.horizontalHeader().setResizeMode(0,
-                                                    QtGui.QHeaderView.Stretch)
-        self.table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-        self.table.verticalHeader().hide()
-        self.table.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
-        self.table.setAutoFillBackground(True)
-
-        lay.addWidget(self.table)
-
-        hsublay = QtGui.QHBoxLayout()
+        sublay = QtGui.QHBoxLayout()
         self.total = QtGui.QLabel(u'Summe: 0,00 €')
         self.sub_total = QtGui.QLabel(u'Teilsumme: 0,00 €')
-        hsublay.addWidget(self.total)
-        hsublay.addWidget(self.sub_total)
-        lay.addLayout(hsublay)
+        sublay.addWidget(self.sub_total)
+        sublay.addWidget(self.total)
+
+        lay.addWidget(self.title)
+        lay.addWidget(self.table)
+        lay.addLayout(sublay)
 
         pay_button = QtGui.QPushButton('Bezahlen')
         pay_button.clicked.connect(self.paybut_clicked)
@@ -85,10 +86,22 @@ class Tab_view(QtGui.QWidget):
         lay.addWidget(remove_button)
 
         sig.update_tab.connect(self.update_tab)
-        self.table.selectionModel().selectionChanged.connect(
-            self.selection_changed)
 
-    def set_tab(self, tab):
+    def _setup_table(self):
+        "Setups and configures the QTableWidget"
+
+        table = QtGui.QTableWidget(5, 2)
+
+        table.setHorizontalHeaderLabels(['Name', 'Preis'])
+        table.setColumnWidth(1, 50)
+        table.horizontalHeader().setResizeMode(0, QtGui.QHeaderView.Stretch)
+        table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        table.verticalHeader().hide()
+        table.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+        table.setAutoFillBackground(True)
+        self.table = table
+
+    def render_tab(self, tab):
         self.title.setText(tab.name)
         self.table.setRowCount(len(tab.tab))
 
@@ -103,7 +116,7 @@ class Tab_view(QtGui.QWidget):
 
     def update_tab(self):
         if controller.current_tab:
-            self.set_tab(controller.current_tab)
+            self.render_tab(controller.current_tab)
 
     def selection_changed(self, sel):
         rows = self.table.selectionModel().selectedRows()
@@ -112,12 +125,11 @@ class Tab_view(QtGui.QWidget):
         sub_total = (tab.calc_subtotal(sel))
         self.sub_total.setText('Teilsumme: ' + str(sub_total) + u' €')
 
-
     def paybut_clicked(self):
-        to = controller.current_tab.calc_total()
+        total = controller.current_tab.calc_total()
         ok = QtGui.QMessageBox.question(self, u'Bestätige Zahlung',
                                         u"{0} € vom Zettel bezahlt?".format(
-                                            to),
+                                            total),
                                         QtGui.QMessageBox.Yes,
                                         QtGui.QMessageBox.No)
         if ok:
@@ -141,6 +153,9 @@ class Tab_view(QtGui.QWidget):
 class Clients_view(QtGui.QWidget):
     def __init__(self, parent=None):
         super(Clients_view, self).__init__(parent=parent)
+        self._setup_layout()
+
+    def _setup_layout(self):
         self.setLayout(QtGui.QVBoxLayout())
         self.setSizePolicy(QtGui.QSizePolicy.Minimum,
                            QtGui.QSizePolicy.Minimum)
@@ -154,10 +169,10 @@ class Clients_view(QtGui.QWidget):
         self.add_button.clicked.connect(self.add_user_clicked)
         self.layout().addWidget(self.add_button)
 
-        sig.update_client_list.connect(self.update_view)
-        self.update_view()
+        sig.update_client_list.connect(self.render_view)
+        self.render_view()
 
-    def update_view(self):
+    def render_view(self):
         self.list.clear()
         font = QtGui.QFont()
         font.setFamily('Humor Sans')
@@ -168,7 +183,8 @@ class Clients_view(QtGui.QWidget):
 
     def selected_tab_changed(self, new_item):
         if new_item:
-            self.parent().parent().selected_tab_changed(new_item.text())
+            controller.current_tab = controller.tabs[str(new_item.text())]
+            sig.update_tab.emit()
 
     def add_user_clicked(self):
         """
@@ -184,7 +200,7 @@ class Clients_view(QtGui.QWidget):
                 msgBox = QtGui.QMessageBox()
                 msgBox.setText("The document has been modified.")
                 msgBox.exec_()
-            self.update_view()
+            self.render_view()
 
 
 class Itemlist_view(QtGui.QWidget):
@@ -225,10 +241,6 @@ class MainWindow(QtGui.QMainWindow):
         lay.addWidget(self.client_view)
         lay.addWidget(self.tab_view)
         self.setCentralWidget(wid)
-
-    def selected_tab_changed(self, name):
-        controller.current_tab = controller.tabs[str(name)]
-        self.tab_view.set_tab(controller.current_tab)
 
 
 if __name__ == '__main__':
