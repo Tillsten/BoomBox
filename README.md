@@ -1,6 +1,9 @@
 BoomBox
 ===========
 
+
+.. image:: https://github.com/Tillsten/BoomBox/raw/master/logo.png
+
 A very simple pyqt-based point of sale system for bars with a small inventory.
 
 
