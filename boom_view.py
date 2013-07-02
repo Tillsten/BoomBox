@@ -5,23 +5,23 @@ Created on Mon Jul 01 14:56:32 2013
 @author: Tillsten
 """
 
-
-
 from __future__ import print_function
-
 from PyQt4 import QtGui, QtCore
-from PyQt4.QtGui import QItemSelection
 from qt_helpers import FlowLayout
 Qt = QtCore.Qt
 from boom_controller import Controller
+
 controller = Controller()
 controller.create_tab('Till')
 controller.add_to_tab('Till', controller.inv[0])
 
+
 class Signals(QtCore.QObject):
     update_tab = QtCore.pyqtSignal()
+    update_client_list = QtCore.pyqtSignal()
 
 sig = Signals()
+
 
 class ImageLabel(QtGui.QWidget):
     def __init__(self, text, image_path, parent=None):
@@ -36,7 +36,7 @@ class ImageLabel(QtGui.QWidget):
         self.pixmap = QtGui.QPixmap(image_path)
         mode = QtCore.Qt.KeepAspectRatio
         self.pic.setPixmap(self.pixmap.scaled(100, 100, mode))
-        self.pic.setStyleSheet( "margin:5px; border:1px solid rgb(0, 0, 0); ")
+        self.pic.setStyleSheet("margin:5px; border:1px solid rgb(0, 0, 0); ")
         lay.addWidget(self.pic)
 
         self.label = QtGui.QLabel(text)
@@ -44,6 +44,7 @@ class ImageLabel(QtGui.QWidget):
 
     def mouseReleaseEvent(self, event):
         self.parent().item_clicked(self)
+
 
 class Tab_view(QtGui.QWidget):
     def __init__(self, parent=None):
@@ -59,7 +60,8 @@ class Tab_view(QtGui.QWidget):
         self.table = QtGui.QTableWidget(5, 2)
         self.table.setHorizontalHeaderLabels(['Name', 'Preis'])
         self.table.setColumnWidth(1, 50)
-        self.table.horizontalHeader().setResizeMode(0, QtGui.QHeaderView.Stretch)
+        self.table.horizontalHeader().setResizeMode(0,
+                                                    QtGui.QHeaderView.Stretch)
         self.table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         self.table.verticalHeader().hide()
         self.table.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
@@ -74,7 +76,6 @@ class Tab_view(QtGui.QWidget):
         hsublay.addWidget(self.sub_total)
         lay.addLayout(hsublay)
 
-
         pay_button = QtGui.QPushButton('Bezahlen')
         pay_button.clicked.connect(self.paybut_clicked)
         lay.addWidget(pay_button)
@@ -84,7 +85,8 @@ class Tab_view(QtGui.QWidget):
         lay.addWidget(remove_button)
 
         sig.update_tab.connect(self.update_tab)
-        self.table.selectionModel().selectionChanged.connect(self.selection_changed)
+        self.table.selectionModel().selectionChanged.connect(
+            self.selection_changed)
 
     def set_tab(self, tab):
         self.title.setText(tab.name)
@@ -92,28 +94,35 @@ class Tab_view(QtGui.QWidget):
 
         for i, it in enumerate(tab.tab):
             self.table.setItem(i, 0, QtGui.QTableWidgetItem(it.name))
-            self.table.setItem(i, 1, QtGui.QTableWidgetItem(str(it.price) + u' €'))
+            self.table.setItem(i, 1,
+                               QtGui.QTableWidgetItem(str(it.price) + u' €'))
             self.table.item(i, 0).setTextAlignment(Qt.AlignLeft)
             self.table.item(i, 1).setTextAlignment(Qt.AlignRight)
 
-        self.total.setText('Summe: ' +  str(tab.calc_total()) + u' €')
+        self.total.setText('Summe: ' + str(tab.calc_total()) + u' €')
 
     def update_tab(self):
-        self.set_tab(controller.current_tab)
+        if controller.current_tab:
+            self.set_tab(controller.current_tab)
 
     def selection_changed(self, sel):
         rows = self.table.selectionModel().selectedRows()
-        print(rows)
         tab = controller.current_tab
-        print(sel)
         sel = [tab.tab[i.row()] for i in rows]
         sub_total = (tab.calc_subtotal(sel))
-        self.sub_total.setText('Teilsumme: ' +  str(sub_total) + u' €')
-
+        self.sub_total.setText('Teilsumme: ' + str(sub_total) + u' €')
 
 
     def paybut_clicked(self):
-        controller.pay_tab(controller.current_tab.name)
+        to = controller.current_tab.calc_total()
+        ok = QtGui.QMessageBox.question(self, u'Bestätige Zahlung',
+                                        u"{0} € vom Zettel bezahlt?".format(
+                                            to),
+                                        QtGui.QMessageBox.Yes,
+                                        QtGui.QMessageBox.No)
+        if ok:
+            controller.pay_tab(controller.current_tab.name)
+            sig.update_client_list.emit()
 
     def remove_clicked(self):
         self.table.selectedIndexes()
@@ -121,7 +130,8 @@ class Tab_view(QtGui.QWidget):
         tab = controller.current_tab
         item_text = tab.tab[row].name
         reply = QtGui.QMessageBox.question(self, u'Bestätige löschen?',
-                                           u"Lösche {0} vom Zettel?".format(item_text),
+                                           u"Lösche {0} vom Zettel?".format(
+                                               item_text),
                                            QtGui.QMessageBox.Yes,
                                            QtGui.QMessageBox.No)
         if reply:
@@ -143,11 +153,14 @@ class Clients_view(QtGui.QWidget):
         self.add_button = QtGui.QPushButton('Neuer Zettel')
         self.add_button.clicked.connect(self.add_user_clicked)
         self.layout().addWidget(self.add_button)
+
+        sig.update_client_list.connect(self.update_view)
         self.update_view()
 
     def update_view(self):
         self.list.clear()
         font = QtGui.QFont()
+        font.setFamily('Humor Sans')
         font.setPixelSize(30)
         self.list.setFont(font)
         for i, tab in enumerate(controller.tabs):
@@ -161,8 +174,9 @@ class Clients_view(QtGui.QWidget):
         """
         Add a new tab after clicking the button.
         """
-        text, ok = QtGui.QInputDialog.getText(self, "Neuer Zettel", "Zettel Name:",
-                                          QtGui.QLineEdit.Normal,    '')
+        text, ok = QtGui.QInputDialog.getText(self, "Neuer Zettel",
+                                              "Zettel Name:",
+                                              QtGui.QLineEdit.Normal, '')
         if ok and text:
             try:
                 controller.create_tab(str(text))
@@ -171,6 +185,7 @@ class Clients_view(QtGui.QWidget):
                 msgBox.setText("The document has been modified.")
                 msgBox.exec_()
             self.update_view()
+
 
 class Itemlist_view(QtGui.QWidget):
     def __init__(self, parent=None):
@@ -187,13 +202,14 @@ class Itemlist_view(QtGui.QWidget):
             il = ImageLabel(item.name, item.image_path, self)
             self.layout().addWidget(il)
             self.img_to_item[il] = item
-        #self.layout().addItem(QtGui.QSpacerItem(100, 100))
+            #self.layout().addItem(QtGui.QSpacerItem(100, 100))
 
     def item_clicked(self, sender):
         item = self.img_to_item[sender]
         if controller.current_tab:
             controller.add_to_tab(controller.current_tab.name, item)
             sig.update_tab.emit()
+
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self):
