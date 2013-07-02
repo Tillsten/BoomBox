@@ -136,6 +136,7 @@ class Tab_view(QtGui.QWidget):
                                            QtGui.QMessageBox.No)
         if reply:
             tab.remove_from_tab(tab.tab[row])
+            sig.update_tab.emit()
 
 
 class Clients_view(QtGui.QWidget):
@@ -163,6 +164,10 @@ class Clients_view(QtGui.QWidget):
         self.add_button = QtGui.QPushButton('Neuer Zettel')
         self.add_button.clicked.connect(self.add_user_clicked)
         self.layout().addWidget(self.add_button)
+
+        self.import_users_button = QtGui.QPushButton('Import Mannschaft')
+        self.import_users_button.clicked.connect(self.import_users_clicked)
+        self.layout().addWidget(self.import_users_button)
 
         sig.update_client_list.connect(self.render_view)
         self.render_view()
@@ -202,6 +207,16 @@ class Clients_view(QtGui.QWidget):
                 msgBox.setText("The document has been modified.")
                 msgBox.exec_()
             self.render_view()
+
+    def import_users_clicked(self):
+        """
+        Imports a list of clients from a text file.
+        """
+        fname = QtGui.QFileDialog().getOpenFileName(self, "Mannschaft",
+                                                     ".", filter="*.boom")
+        if fname:
+            controller.create_tabs_from_file(fname)
+            sig.update_client_list.emit()
 
 
 class Itemlist_view(QtGui.QWidget):

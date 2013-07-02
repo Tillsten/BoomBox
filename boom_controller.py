@@ -11,19 +11,9 @@ from __future__ import print_function
 
 from boom_model import *
 
-inv = """Wasser 0,5l| 1.00|pics\\wasser.png
-Apfelschorle 0,5l| 1.00|pics\\apfelschrole.png
-Kaffee| 1.00|pics\\kaffee.png
-Tee| 1.00|pics\\tee.png
-Cola 0,5l| 1.50|pics\\cola.png
-Energy 0,3l| 1.30|pics\\energy.png
-Club Mate 0,5l| 1.50|pics\\club_mate.png
-Sternburg Export 0,5l| 1.20|pics\\sternburg.png
-Radler | 1.20|pics\\radler.png
-Becks 0,33l| 1.50|pics\\becks.png
-"""
+inv = open('inventar.txt').readlines()
 list_it = []
-for line in inv.splitlines():
+for line in inv:
     list_it.append(Item(*line.split('|')))
 
 
@@ -46,6 +36,12 @@ class Controller(object):
         tab = Tab(name)
         self.tabs[name] = tab
 
+    def create_tabs_from_file(self, fname):
+        with open(fname,'r') as f:
+            for i in f:
+                i = i.strip()
+                self.create_tab(str(i))
+
     def add_to_tab(self, tab_name, item):
         tab = self.tabs[tab_name]
         tab.add_to_tab(item)
@@ -64,6 +60,7 @@ class Controller(object):
         self.tabs.pop(tab_name)
         if tab_name == 'Bar':
             self.create_tab('Bar')
+            self.current_tab = self.tabs['Bar']
 
 
 if __name__ == '__main__':
