@@ -1,5 +1,30 @@
 from PyQt4 import QtCore, QtGui
 
+
+class ImageLabel(QtGui.QWidget):
+    def __init__(self, text, image_path, parent=None):
+        QtGui.QWidget.__init__(self, parent=parent)
+
+        lay = QtGui.QVBoxLayout()
+
+        self.setLayout(lay)
+        self.setSizePolicy(QtGui.QSizePolicy.Fixed,
+                           QtGui.QSizePolicy.Fixed)
+
+        self.pic = QtGui.QLabel()
+        self.pixmap = QtGui.QPixmap(image_path)
+        mode = QtCore.Qt.KeepAspectRatio
+        self.pic.setPixmap(self.pixmap.scaled(100, 100, mode))
+        self.pic.setStyleSheet("margin:5px; border:1px solid rgb(0, 0, 0); ")
+        lay.addWidget(self.pic)
+
+        self.label = QtGui.QLabel(text)
+        lay.addWidget(self.label)
+
+    def mouseReleaseEvent(self, event):
+        self.parent().item_clicked(self)
+
+
 class FlowLayout(QtGui.QLayout):
     def __init__(self, parent=None, margin=0, spacing=-1):
         super(FlowLayout, self).__init__(parent)

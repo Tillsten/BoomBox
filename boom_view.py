@@ -7,7 +7,7 @@ Created on Mon Jul 01 14:56:32 2013
 
 from __future__ import print_function
 from PyQt4 import QtGui, QtCore
-from qt_helpers import FlowLayout
+from qt_helpers import FlowLayout, ImageLabel
 Qt = QtCore.Qt
 from boom_controller import Controller
 
@@ -21,30 +21,6 @@ class Signals(QtCore.QObject):
     update_client_list = QtCore.pyqtSignal()
 
 sig = Signals()
-
-
-class ImageLabel(QtGui.QWidget):
-    def __init__(self, text, image_path, parent=None):
-        QtGui.QWidget.__init__(self, parent=parent)
-
-        lay = QtGui.QVBoxLayout()
-
-        self.setLayout(lay)
-        self.setSizePolicy(QtGui.QSizePolicy.Fixed,
-                           QtGui.QSizePolicy.Fixed)
-
-        self.pic = QtGui.QLabel()
-        self.pixmap = QtGui.QPixmap(image_path)
-        mode = QtCore.Qt.KeepAspectRatio
-        self.pic.setPixmap(self.pixmap.scaled(100, 100, mode))
-        self.pic.setStyleSheet("margin:5px; border:1px solid rgb(0, 0, 0); ")
-        lay.addWidget(self.pic)
-
-        self.label = QtGui.QLabel(text)
-        lay.addWidget(self.label)
-
-    def mouseReleaseEvent(self, event):
-        self.parent().item_clicked(self)
 
 
 class Tab_view(QtGui.QWidget):
@@ -64,6 +40,7 @@ class Tab_view(QtGui.QWidget):
 
         title_font = QtGui.QFont()
         title_font.setPixelSize(30)
+        title_font.setFamily('Humor Sans')
         self.title = QtGui.QLabel(None)
         self.title.setFont(title_font)
 
