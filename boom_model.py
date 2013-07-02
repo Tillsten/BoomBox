@@ -30,39 +30,45 @@ class Tab(object):
     """
     def __init__(self, name):
         self.name = name
-        self.tab = []        
-    
+        self.tab = []
+
     def add_to_tab(self, prod):
-        self.tab.append(prod)            
-        
+        self.tab.append(prod)
+
     def remove_from_tab(self, prod):
         self.tab.remove(prod)
-        
+
     def calc_total(self):
         return self.calc_subtotal(self.tab)
-        
+
     def calc_subtotal(self, selected_prods):
         total = decimal.Decimal('0.00')
         for i in selected_prods:
             total += i.price
         return total
-        
-    def pprint(self):
+
+    def make_recipe(self):
+        s = ''
         for i in self.tab:
-            print("{0:20} {1}".format(i.name, i.price))
-        print('---------------------------')
-        print("{0:20} {1}".format("TOTAL", self.calc_total()))
-            
+            s += "{0:20} {1}\n".format(i.name, i.price)
+        s += '---------------------------\n'
+        s += "{0:20} {1}\n".format("TOTAL", self.calc_total())
+        return s
+
+    def pprint(self):
+        print(self.make_recipe())
+
+
 
 
 
 if __name__ == '__main__':
-        
+
     ClubMate = Item('Club Mate', '1.50')
     ClubMate.image_path = 'club_mate_flaschen.png'
     Kickern = Item('Kickern', '3.00')
-            
-           
+
+
     Till = Tab('Till')
     Till.add_to_tab(ClubMate)
     Till.add_to_tab(ClubMate)
