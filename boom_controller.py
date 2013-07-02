@@ -8,6 +8,7 @@ Created on Mon Jul 01 16:01:31 2013
 
 
 from __future__ import print_function
+
 from boom_model import *
 
 inv = """Wasser 0,5l| 1.00|pics\\wasser.png
@@ -23,9 +24,8 @@ Becks 0,33l| 1.50|pics\\becks.png
 """
 list_it = []
 for line in inv.splitlines():
-    print(line.split('|'))
     list_it.append(Item(*line.split('|')))
-    print(list_it[-1].image_path)
+
 
 class Controller(object):
     def __init__(self):
@@ -60,7 +60,10 @@ class Controller(object):
         with open('total_payments.txt', 'a') as f:
             f.writelines(tab_name +' '+ str(payed)+'\n')
         self.cash_register.cash += payed
+
         self.tabs.pop(tab_name)
+        if tab_name == 'Bar':
+            self.create_tab('Bar')
 
 
 if __name__ == '__main__':

@@ -12,11 +12,12 @@ Qt = QtCore.Qt
 from boom_controller import Controller
 
 controller = Controller()
-controller.create_tab('Till')
-controller.add_to_tab('Till', controller.inv[0])
+controller.create_tab('Bar')
+
 
 
 class Signals(QtCore.QObject):
+    """Ui-signal registry"""
     update_tab = QtCore.pyqtSignal()
     update_client_list = QtCore.pyqtSignal()
 
@@ -24,6 +25,7 @@ sig = Signals()
 
 
 class Tab_view(QtGui.QWidget):
+    """View of single tab"""
     def __init__(self, parent=None):
         super(Tab_view, self).__init__(parent=parent)
 
@@ -34,25 +36,25 @@ class Tab_view(QtGui.QWidget):
             self.selection_changed)
 
     def _setup_layout(self):
-        "Setup the widget layout"
+        """Setup the widget layout"""
         lay = QtGui.QVBoxLayout()
         self.setLayout(lay)
 
         title_font = QtGui.QFont()
-        title_font.setPixelSize(30)
+        title_font.setPixelSize(40)
         title_font.setFamily('Humor Sans')
         self.title = QtGui.QLabel(None)
         self.title.setFont(title_font)
 
-        sublay = QtGui.QHBoxLayout()
+        sub_layout = QtGui.QHBoxLayout()
         self.total = QtGui.QLabel(u'Summe: 0,00 €')
         self.sub_total = QtGui.QLabel(u'Teilsumme: 0,00 €')
-        sublay.addWidget(self.sub_total)
-        sublay.addWidget(self.total)
+        sub_layout.addWidget(self.sub_total)
+        sub_layout.addWidget(self.total)
 
         lay.addWidget(self.title)
         lay.addWidget(self.table)
-        lay.addLayout(sublay)
+        lay.addLayout(sub_layout)
 
         pay_button = QtGui.QPushButton('Bezahlen')
         pay_button.clicked.connect(self.paybut_clicked)
@@ -65,7 +67,7 @@ class Tab_view(QtGui.QWidget):
         sig.update_tab.connect(self.update_tab)
 
     def _setup_table(self):
-        "Setups and configures the QTableWidget"
+        """Setups and configures the QTableWidget"""
 
         table = QtGui.QTableWidget(5, 2)
 
@@ -79,6 +81,7 @@ class Tab_view(QtGui.QWidget):
         self.table = table
 
     def render_tab(self, tab):
+        """Render the tab-table."""
         self.title.setText(tab.name)
         self.table.setRowCount(len(tab.tab))
 
@@ -92,10 +95,12 @@ class Tab_view(QtGui.QWidget):
         self.total.setText('Summe: ' + str(tab.calc_total()) + u' €')
 
     def update_tab(self):
+        """Method called if current_tab changed."""
         if controller.current_tab:
             self.render_tab(controller.current_tab)
 
     def selection_changed(self, sel):
+        """Handler if selection in table changes, updates subtotal"""
         rows = self.table.selectionModel().selectedRows()
         tab = controller.current_tab
         sel = [tab.tab[i.row()] for i in rows]
@@ -103,6 +108,10 @@ class Tab_view(QtGui.QWidget):
         self.sub_total.setText('Teilsumme: ' + str(sub_total) + u' €')
 
     def paybut_clicked(self):
+        """
+        Calls msg-box if payment is made, if so process payment and
+        deletes tab.
+        """
         total = controller.current_tab.calc_total()
         ok = QtGui.QMessageBox.question(self, u'Bestätige Zahlung',
                                         u"{0} € vom Zettel bezahlt?".format(
@@ -112,8 +121,10 @@ class Tab_view(QtGui.QWidget):
         if ok:
             controller.pay_tab(controller.current_tab.name)
             sig.update_client_list.emit()
+            sig.update_tab.emit()
 
     def remove_clicked(self):
+        """Removes a item from the tab without payment."""
         self.table.selectedIndexes()
         row = self.table.currentRow()
         tab = controller.current_tab
@@ -128,11 +139,13 @@ class Tab_view(QtGui.QWidget):
 
 
 class Clients_view(QtGui.QWidget):
+    """Show all tabs/clients/tables and allows to chose one"""
     def __init__(self, parent=None):
         super(Clients_view, self).__init__(parent=parent)
         self._setup_layout()
 
     def _setup_layout(self):
+        """Setup layout and connections"""
         self.setLayout(QtGui.QVBoxLayout())
         self.setSizePolicy(QtGui.QSizePolicy.Minimum,
                            QtGui.QSizePolicy.Minimum)
@@ -140,6 +153,11 @@ class Clients_view(QtGui.QWidget):
         self.layout().addWidget(QtGui.QLabel('Zettel'))
         self.list = QtGui.QListWidget()
         self.list.currentItemChanged.connect(self.selected_tab_changed)
+        font = QtGui.QFont()
+        font.setFamily('Humor Sans')
+        font.setPixelSize(30)
+        self.list.setFont(font)
+
         self.layout().addWidget(self.list)
 
         self.add_button = QtGui.QPushButton('Neuer Zettel')
@@ -150,15 +168,21 @@ class Clients_view(QtGui.QWidget):
         self.render_view()
 
     def render_view(self):
+        """Render the list"""
         self.list.clear()
-        font = QtGui.QFont()
-        font.setFamily('Humor Sans')
-        font.setPixelSize(30)
-        self.list.setFont(font)
-        for i, tab in enumerate(controller.tabs):
+        tab_list = sorted(controller.tabs)
+        if tab_list.index('Bar') >= 0:
+            tab_list.pop(tab_list.index('Bar'))
+            tab_list.insert(0, 'Bar')
+
+        for i, tab in enumerate(tab_list):
             self.list.addItem(tab)
 
+
     def selected_tab_changed(self, new_item):
+        """
+        Called if a list-item is clicked.
+        """
         if new_item:
             controller.current_tab = controller.tabs[str(new_item.text())]
             sig.update_tab.emit()
@@ -181,6 +205,9 @@ class Clients_view(QtGui.QWidget):
 
 
 class Itemlist_view(QtGui.QWidget):
+    """
+    Shows all the avaible items of the inventory. A click add them to the tab.
+    """
     def __init__(self, parent=None):
         super(Itemlist_view, self).__init__(parent=parent)
         self.setMinimumSize(600, 100)
@@ -191,6 +218,9 @@ class Itemlist_view(QtGui.QWidget):
         self.setLayout(lay)
 
     def add_items(self, list_of_items):
+        """
+        Makes the list.
+        """
         for item in list_of_items:
             il = ImageLabel(item.name, item.image_path, self)
             self.layout().addWidget(il)
@@ -198,6 +228,9 @@ class Itemlist_view(QtGui.QWidget):
             #self.layout().addItem(QtGui.QSpacerItem(100, 100))
 
     def item_clicked(self, sender):
+        """
+        If item is clicked, this function is called.
+        """
         item = self.img_to_item[sender]
         if controller.current_tab:
             controller.add_to_tab(controller.current_tab.name, item)
@@ -210,13 +243,16 @@ class MainWindow(QtGui.QMainWindow):
         self.setMinimumSize(1000, 800)
         self.setWindowTitle("Boombox-Kasse!")
         wid = QtGui.QWidget()
+
         self.item_view = Itemlist_view(wid)
         self.tab_view = Tab_view(wid)
         self.client_view = Clients_view(self)
+
         lay = QtGui.QHBoxLayout(wid)
         lay.addWidget(self.item_view)
         lay.addWidget(self.client_view)
         lay.addWidget(self.tab_view)
+
         self.setCentralWidget(wid)
 
 
