@@ -14,7 +14,7 @@ from boom_model import *
 inv = open('inventar.txt').readlines()
 list_it = []
 for line in inv:
-    list_it.append(Item(*line.split('|')))
+    list_it.append(Item(*line.rstrip().split('|')))
 
 
 class Controller(object):

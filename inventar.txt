@@ -1,4 +1,4 @@
-"Wasser 0,5l| 1.00|pics\wasser.png
+Wasser 0,5l| 1.00|pics\wasser.png
 Apfelschorle 0,5l| 1.00|pics\apfelschrole.png
 Kaffee| 1.00|pics\kaffee.png
 Tee| 1.00|pics\tee.png
