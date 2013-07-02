@@ -10,6 +10,7 @@ Created on Mon Jul 01 14:56:32 2013
 from __future__ import print_function
 
 from PyQt4 import QtGui, QtCore
+from PyQt4.QtGui import QItemSelection
 from qt_helpers import FlowLayout
 Qt = QtCore.Qt
 from boom_controller import Controller
@@ -59,6 +60,8 @@ class Tab_view(QtGui.QWidget):
         self.table.setHorizontalHeaderLabels(['Name', 'Preis'])
         self.table.setColumnWidth(1, 50)
         self.table.horizontalHeader().setResizeMode(0, QtGui.QHeaderView.Stretch)
+        self.table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.table.verticalHeader().hide()
         self.table.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
         self.table.setAutoFillBackground(True)
 
@@ -72,16 +75,16 @@ class Tab_view(QtGui.QWidget):
         lay.addLayout(hsublay)
 
 
-        pay_button = QtGui.QPushButton('Bezahlt!')
+        pay_button = QtGui.QPushButton('Bezahlen')
         pay_button.clicked.connect(self.paybut_clicked)
         lay.addWidget(pay_button)
 
-        remove_button = QtGui.QPushButton('Entfern Posten')
+        remove_button = QtGui.QPushButton('Entferne Posten')
         remove_button.clicked.connect(self.remove_clicked)
         lay.addWidget(remove_button)
 
         sig.update_tab.connect(self.update_tab)
-
+        self.table.selectionModel().selectionChanged.connect(self.selection_changed)
 
     def set_tab(self, tab):
         self.title.setText(tab.name)
@@ -98,10 +101,22 @@ class Tab_view(QtGui.QWidget):
     def update_tab(self):
         self.set_tab(controller.current_tab)
 
+    def selection_changed(self, sel):
+        rows = self.table.selectionModel().selectedRows()
+        print(rows)
+        tab = controller.current_tab
+        print(sel)
+        sel = [tab.tab[i.row()] for i in rows]
+        sub_total = (tab.calc_subtotal(sel))
+        self.sub_total.setText('Teilsumme: ' +  str(sub_total) + u' €')
+
+
+
     def paybut_clicked(self):
         controller.pay_tab(controller.current_tab.name)
 
     def remove_clicked(self):
+        self.table.selectedIndexes()
         row = self.table.currentRow()
         tab = controller.current_tab
         item_text = tab.tab[row].name
