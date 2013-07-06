@@ -8,13 +8,15 @@ Created on Mon Jul 01 16:01:31 2013
 
 
 from __future__ import print_function
-
+import codecs
 from boom_model import *
-
-inv = open('inventar.txt').readlines()
+f = codecs.open('inventar.txt', encoding='utf-8')
+inv = f.readlines()
 list_it = []
 for line in inv:
-    list_it.append(Item(*line.rstrip().split('|')))
+    name, price, image_path = line.rstrip().split('|')
+
+    list_it.append(Item(name, price, image_path))
 
 
 class Controller(object):
@@ -40,7 +42,7 @@ class Controller(object):
         with open(fname,'r') as f:
             for i in f:
                 i = i.strip()
-                self.create_tab(str(i))
+                self.create_tab(unicode(i))
 
     def add_to_tab(self, tab_name, item):
         tab = self.tabs[tab_name]
@@ -54,7 +56,7 @@ class Controller(object):
             f.write(tab.make_recipe())
 
         with open('total_payments.txt', 'a') as f:
-            f.writelines(tab_name +' '+ str(payed)+'\n')
+            f.writelines(tab_name +' '+ unicode(payed)+'\n')
         self.cash_register.cash += payed
 
         self.tabs.pop(tab_name)

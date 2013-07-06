@@ -155,7 +155,7 @@ class Clients_view(QtGui.QWidget):
         self.list = QtGui.QListWidget()
         self.list.currentItemChanged.connect(self.selected_tab_changed)
         font = QtGui.QFont()
-        font.setFamily('Humor Sans')
+        #font.setFamily('Humor Sans')
         font.setPixelSize(30)
         self.list.setFont(font)
 
@@ -189,7 +189,7 @@ class Clients_view(QtGui.QWidget):
         Called if a list-item is clicked.
         """
         if new_item:
-            controller.current_tab = controller.tabs[str(new_item.text())]
+            controller.current_tab = controller.tabs[unicode(new_item.text())]
             sig.update_tab.emit()
 
     def add_user_clicked(self):
@@ -201,7 +201,7 @@ class Clients_view(QtGui.QWidget):
                                               QtGui.QLineEdit.Normal, '')
         if ok and text:
             try:
-                controller.create_tab(str(text))
+                controller.create_tab(unicode(text))
             except NameError:
                 msgBox = QtGui.QMessageBox()
                 msgBox.setText("The document has been modified.")
@@ -236,6 +236,7 @@ class Itemlist_view(QtGui.QWidget):
         """
         Makes the list.
         """
+
         for item in list_of_items:
             il = ImageLabel(item.name, item.image_path, self)
             self.layout().addWidget(il)
@@ -270,7 +271,14 @@ class MainWindow(QtGui.QMainWindow):
 
         self.setCentralWidget(wid)
 
-
+    def closeEvent(self, event):
+        event.ignore()
+        ok = QtGui.QMessageBox.question(self, u'Bestätige beenden',
+                                            "SICHER BEENDEN?",
+                                        QtGui.QMessageBox.Yes,
+                                        QtGui.QMessageBox.No)
+        if ok:
+            event.accept()
 if __name__ == '__main__':
     app = QtGui.QApplication([])
     sty = QtGui.QStyleFactory.create('cleanlooks')

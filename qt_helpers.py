@@ -14,7 +14,7 @@ class ImageLabel(QtGui.QWidget):
         self.pic = QtGui.QLabel()
         self.pixmap = QtGui.QPixmap(image_path)
         mode = QtCore.Qt.KeepAspectRatio
-        self.pic.setPixmap(self.pixmap.scaled(100, 100, mode))
+        self.pic.setPixmap(self.pixmap.scaled(70, 70, mode))
         self.pic.setStyleSheet("margin:5px; border:1px solid rgb(0, 0, 0); ")
         lay.addWidget(self.pic)
 
